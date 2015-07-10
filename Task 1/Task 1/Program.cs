@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,70 +17,98 @@ namespace Task_1
 
         private static void Main(string[] args)
         {
-            int[][] matrix;
-
-            ReadMatrix("input.txt", out matrix);
+            int[][] matrix = ReadMatrix("input.txt");
 
             if (matrix.Length > 0)
             {
-                SortStrings(ref matrix);
+                int[] maxLengths = FindMaxLengths(matrix);
+                SortRows(matrix, 0, matrix.Length - 1, maxLengths);
                 TransposeMatrix(ref matrix);
-                SortStrings(ref matrix);
+
+                maxLengths = FindMaxLengths(matrix);
+                SortRows(matrix, 0, matrix.Length - 1, maxLengths);
                 TransposeMatrix(ref matrix);
             }
 
             WriteMatrix("output.txt", matrix);
         }
 
-        private static void ReadMatrix(string fileName, out int[][] matrix)
+        /// <summary>
+        /// Read matrix from text file
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        private static int[][] ReadMatrix(string fileName)
         {
             string text = System.IO.File.ReadAllText(fileName).Replace("\r\n", " ");
             int[] values = text.Split(' ').Select(n => int.Parse(n)).ToArray();
 
-            CreateMatrix(out matrix, values[0], values[1]);
+            int[][] tmpMatrix = CreateMatrix(values[0], values[1]);
 
             int curValue = 2;
-            for (int i = 0; i < matrix.Length; i++)
+            for (int i = 0; i < tmpMatrix.Length; i++)
             {
-                for (int j = 0; j < matrix[0].Length; j++)
+                for (int j = 0; j < tmpMatrix[0].Length; j++)
                 {
-                    matrix[i][j] = values[curValue];
+                    tmpMatrix[i][j] = values[curValue];
                     curValue++;
                 }
             }
+            return tmpMatrix;
         }
 
-        private static void CreateMatrix(out int [][] matrix, int heigth, int width)
+        /// <summary>
+        /// Matrix initialization
+        /// </summary>
+        /// <param name="heigth"></param>
+        /// <param name="width"></param>
+        private static int[][] CreateMatrix(int heigth, int width)
         {
-            matrix = new int[heigth][];
-            for (int i = 0; i < matrix.Length; i++)
+            int[][] tmpMatrix = new int[heigth][];
+            for (int i = 0; i < tmpMatrix.Length; i++)
             {
-                matrix[i] = new int[width];
+                tmpMatrix[i] = new int[width];
             }
+            return tmpMatrix;
         }
 
-        private static void SortStrings(ref int[][] matrix)
+        /// <summary>
+        /// Sort rows using maximum lengths of sequences. Quick sort
+        /// </summary>
+        /// <param name="matrix"></param>
+        private static void SortRows(int[][] matrix, int left, int right, int[] maxLengths)
         {
-            int[] maxLengths = new int[matrix.GetLength(0)];
+            int center = maxLengths[left + (right - left) / 2];
 
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                maxLengths[i] = FindMaxLength(matrix[i]);
-            }
+            int i = left;
+            int j = right;
 
-            for (int i = 0; i < maxLengths.Length; i++)
+            while (i <= j)
             {
-                for (int j = i + 1; j < maxLengths.Length; j++)
+                while (maxLengths[i] > center) i++;
+                while (maxLengths[j] < center) j--;
+                if (i <= j)
                 {
-                    if (maxLengths[j] > maxLengths[i])
+                    if (maxLengths[i] != maxLengths[j])
                     {
                         Swap<int>(ref maxLengths[i], ref maxLengths[j]);
                         Swap<int[]>(ref matrix[i], ref matrix[j]);
                     }
+                    i++;
+                    j--;
                 }
+                
             }
+
+            if (i < right) SortRows(matrix, i, right, maxLengths);
+            if (left < j) SortRows(matrix, left, j, maxLengths);
         }
 
+        /// <summary>
+        /// Exchange values of the variables
+        /// </summary>
+        /// <param name="lhs"></param>
+        /// <param name="rhs"></param>
         private static void Swap<T>(ref T lhs, ref T rhs)
         {
             T temp;
@@ -90,45 +117,57 @@ namespace Task_1
             rhs = temp;
         }
 
-        private static int FindMaxLength(int[] array)
+        /// <summary>
+        /// Returns array of maximum lengths of sequence from each row
+        /// </summary>
+        /// <param name="array"></param>
+        private static int[] FindMaxLengths(int[][] matrix)
         {
-            int maxLength = 2;
-            SequanceState curState, prevState;
+            int[] result = new int[matrix.GetLength(0)];
 
-            if (array.Length > 2)
+            for (int i = 0; i < matrix.Length; i++)
             {
-                if (array[0] < array[1])
-                {
-                    curState = prevState = SequanceState.Rising;
-                }
-                else
-                {
-                    curState = prevState = SequanceState.Falling;
-                }
+                int maxLength = 2;
+                SequanceState curState, prevState;
 
-                for (int i = 1; i < array.Length - 1; i++)
+                if (matrix[i].Length > 2)
                 {
-                    if (array[i] < array[i + 1])
+                    if (matrix[i][0] < matrix[i][1])
                     {
-                        curState = SequanceState.Rising;
+                        curState = prevState = SequanceState.Rising;
                     }
                     else
                     {
-                        curState = SequanceState.Falling;
+                        curState = prevState = SequanceState.Falling;
                     }
 
-                    if (prevState == curState) maxLength++;
+                    for (int j = 1; j < matrix[i].Length - 1; j++)
+                    {
+                        if (matrix[i][j] < matrix[i][j + 1])
+                        {
+                            curState = SequanceState.Rising;
+                        }
+                        else
+                        {
+                            curState = SequanceState.Falling;
+                        }
+                        if (prevState == curState) maxLength++;
 
-                    prevState = curState;
+                        prevState = curState;
+                    }
                 }
+                result[i] = maxLength;
             }
-            return maxLength;
+            return result;
         }
 
+        /// <summary>
+        /// Transpose of the matrix
+        /// </summary>
+        /// <param name="matrix"></param>
         private static void TransposeMatrix(ref int[][] matrix)
         {
-            int[][] newMatrix;
-            CreateMatrix(out newMatrix, matrix[0].Length, matrix.Length);
+            int[][] newMatrix = CreateMatrix(matrix[0].Length, matrix.Length);
 
             for (int i = 0; i < matrix.Length; i++)
             {
@@ -141,6 +180,11 @@ namespace Task_1
             matrix = newMatrix;
         }
 
+        /// <summary>
+        /// Write matrix to a text file
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="matrix"></param>
         private static void WriteMatrix(string fileName, int[][] matrix)
         {
             string[] lines = new string[matrix.Length];
