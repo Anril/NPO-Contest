@@ -1,0 +1,14 @@
+# ignore folders
+Task 1/Task 1/bin/
+Task 1/Task 1/obj/
+Task 1/Task 1/Properties/
+Task 2/Task 2/bin/
+Task 2/Task 2/obj/
+Task 2/Task 2/Properties/
+
+# ignore extensions
+*.sln
+*.exe
+*.config
+*.csproj
+
