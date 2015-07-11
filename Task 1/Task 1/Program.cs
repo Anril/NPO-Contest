@@ -8,7 +8,6 @@ namespace Task_1
 {
     public class Program
     {
-
         private enum SequanceState
         { 
             Rising,
